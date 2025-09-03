@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Aplikasi Nabung Kirian</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: radial-gradient(ellipse at top, rgba(70,130,180,0.4), transparent),
+                  radial-gradient(ellipse at bottom, rgba(123,104,238,0.4), transparent),
+                  radial-gradient(ellipse at center, rgba(72,209,204,0.4), transparent),
+                  #0f172a;
+      background-attachment: fixed;
+      background-size: cover;
+      color: #b91c1c; /* merah gelap */
+    }
+    .elaina {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      width: 180px;
+      opacity: 0;
+      transform: translateY(60px);
+      transition: all 0.5s ease;
+      z-index: 50;
+    }
+    .elaina.show { opacity: 1; transform: translateY(0); }
+    .bubble {
+      position: fixed;
+      bottom: 230px;
+      right: 60px;
+      background: white;
+      padding: 14px 18px;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      font-weight: 600;
+      font-size: 16px;
+      color: #b91c1c; /* merah gelap */
+      opacity: 0;
+      transform: translateY(25px);
+      transition: all 0.5s ease;
+    }
+    .bubble.show { opacity: 1; transform: translateY(0); }
+    table { font-size: 28px; }
+    th, td { padding: 20px; }
+  </style>
+</head>
+<body class="flex flex-col items-center p-6">
+
+  <h1 class="text-3xl font-extrabold mb-6">💰 Nabung Kirian</h1>
+
+  <div class="bg-white shadow-2xl rounded-3xl p-6 w-full max-w-2xl text-red-700">
+    <label class="block mb-2 font-bold text-sm">Masukkan Nominal:</label>
+    
+    <div class="flex items-center gap-2">
+      <input id="nominal" type="number" class="border p-2 w-full rounded-lg text-sm text-black" placeholder="cth: 3000">
+      <button onclick="tambahTabungan()" 
+        class="flex items-center gap-2 bg-red-700 text-white px-6 py-3 rounded-2xl hover:bg-red-800 text-3xl font-bold">
+        💾 <span>Simpan</span>
+      </button>
+    </div>
+    
+    <div class="mt-6">
+      <p id="persenText" class="text-center font-bold text-base mb-2">0%</p>
+      <div class="w-full bg-gray-200 rounded-full h-6">
+        <div id="progressBar" class="h-6 rounded-full" style="width: 0%"></div>
+      </div>
+      <p class="mt-3 text-center text-base font-semibold"><span id="total">Rp 0</span> / Rp 250.000</p>
+    </div>
+  </div>
+
+  <!-- Tabel -->
+  <div class="flex justify-center w-full mt-6">
+    <table class="bg-white shadow-2xl rounded-3xl overflow-hidden text-red-700">
+      <thead class="bg-gray-200 text-3xl font-extrabold">
+        <tr>
+          <th>Hari</th>
+          <th>Nominal</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="tabel" class="text-center font-semibold"></tbody>
+    </table>
+  </div>
+
+  <button onclick="resetData()" 
+    class="mt-5 bg-red-700 text-white px-10 py-4 rounded-2xl hover:bg-red-800 text-3xl font-bold shadow-xl">
+    🔄 Reset Data
+  </button>
+
+  <img id="elaina" class="elaina" src="https://i.ibb.co/ZmTsMvt/elaina.jpg" alt="Elaina">
+  <div id="bubble" class="bubble">Semangat menabungnya ya! ✨</div>
+
+  <script>
+    let total = 0;
+    let hari = 0;
+    let riwayat = [];
+
+    const pesanList = [
+      "Semangat menabungnya ya! ✨",
+      "Jangan nyerah ya 💪",
+      "Dikit-dikit jadi bukit ⛰️",
+      "Mantap semangatmu 🔥",
+      "Tabunganmu makin gede nih 💰",
+      "Elaina bangga sama kamu 😊"
+    ];
+
+    function formatRupiah(angka) {
+      return "Rp " + angka.toLocaleString("id-ID");
+    }
+
+    function updateProgress() {
+      const persen = Math.min((total / 250000) * 100, 100);
+      document.getElementById("progressBar").style.width = persen + "%";
+      document.getElementById("persenText").innerText = Math.floor(persen) + "%";
+      document.getElementById("total").innerText = formatRupiah(total);
+
+      const progressBar = document.getElementById("progressBar");
+      if (persen <= 30) progressBar.style.backgroundColor = "red";
+      else if (persen <= 60) progressBar.style.backgroundColor = "orange";
+      else if (persen <= 90) progressBar.style.backgroundColor = "gold";
+      else progressBar.style.backgroundColor = "green";
+    }
+
+    function renderTable() {
+      const tabel = document.getElementById("tabel");
+      tabel.innerHTML = "";
+      riwayat.forEach((item, index) => {
+        tabel.innerHTML += `<tr>
+          <td>${index + 1}</td>
+          <td>${formatRupiah(item.nominal)}</td>
+          <td>${formatRupiah(item.total)}</td>
+        </tr>`;
+      });
+    }
+
+    function saveData() {
+      localStorage.setItem("nabungData", JSON.stringify({ total, hari, riwayat }));
+    }
+
+    function loadData() {
+      const data = localStorage.getItem("nabungData");
+      if (data) {
+        const parsed = JSON.parse(data);
+        total = parsed.total;
+        hari = parsed.hari;
+        riwayat = parsed.riwayat;
+        renderTable();
+        updateProgress();
+      }
+    }
+
+    function tambahTabungan() {
+      const nominalInput = document.getElementById("nominal");
+      const nominal = parseInt(nominalInput.value);
+      if (!nominal || nominal <= 0) return;
+
+      total += nominal;
+      hari++;
+      riwayat.push({ nominal, total });
+
+      renderTable();
+      updateProgress();
+      saveData();
+
+      // Animasi Elaina + Bubble
+      const bubble = document.getElementById("bubble");
+      const elaina = document.getElementById("elaina");
+      bubble.innerText = pesanList[Math.floor(Math.random() * pesanList.length)];
+      elaina.classList.add("show");
+      bubble.classList.add("show");
+      setTimeout(() => {
+        elaina.classList.remove("show");
+        bubble.classList.remove("show");
+      }, 3000);
+    }
+
+    function resetData() {
+      if (confirm("Yakin mau reset semua data tabungan?")) {
+        total = 0;
+        hari = 0;
+        riwayat = [];
+        renderTable();
+        updateProgress();
+        localStorage.removeItem("nabungData");
+      }
+    }
+
+    window.onload = loadData;
+  </script>
+</body>
+</html>
